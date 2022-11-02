@@ -1,6 +1,5 @@
 const express = require("express");
 const app = express();
-const passport = require("../config/passport");
 const { body, validationResult } = require("express-validator");
 const JWT = require("../utils/jwt");
 const User = require("../models");
