@@ -1,9 +1,19 @@
 const express = require("express");
 const app = express();
 
-const { User, Message, Product } = require("../models");
+const { User } = require("../models");
 const passport = require("../config/passport");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
+
+const {
+    checkIfEmailAlreadyExist,
+    checkIfNicknameAlreadyExist,
+    checkIfUserExist,
+    checkIfUserExist,
+    checkIfReceivedMessageExist,
+    checkIfSendedMessageExist,
+    checkIfProductExist,
+} = require("../middlewares/user");
 
 // const multer=require('multer');
 // const storageEngine= multer.diskStorage({
@@ -34,16 +44,14 @@ app.post(
         .exists()
         .isLength({ min: 2 })
         .withMessage("Invalid nickname"),
+    checkIfEmailAlreadyExist,
+    checkIfNicknameAlreadyExist,
     async (req, res) => {
-        const { email, password, firstName, lastName, nickname } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(req.user.password, 10);
 
         const user = await User.create({
-            email,
+            ...req.user,
             password: hashedPassword,
-            firstName,
-            lastName,
-            nickname,
         });
         res.json(user);
     }
@@ -70,16 +78,14 @@ app.put(
         .exists()
         .isLength({ min: 5 })
         .withMessage("Invalid nickname"),
+    checkIfEmailAlreadyExist,
+    checkIfNicknameAlreadyExist,
     async (req, res) => {
-        const { firstName, lastName, nickname, password, email } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(req.user.password, 10);
         const user = await User.update(
             {
-                firstName,
-                lastName,
-                nickname,
+                ...req.user,
                 password: hashedPassword,
-                email,
             },
             {
                 where: {
@@ -92,54 +98,30 @@ app.put(
 );
 
 // get 1 user
-app.get("/", passport.authenticate("jwt"), async (req, res) => {
-    const user = await User.findOne({
-        where: {
-            id: req.user.id,
-        },
-    });
-    const data = {
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        nickname: user.nickname,
-    };
-    res.json(data);
+app.get("/", passport.authenticate("jwt"), checkIfUserExist, (req, res) => {
+    res.json(req.data);
 });
 
 // get all messages (check with receiverId, senderId)
-app.get("/messages/all", passport.authenticate("jwt"), async (req, res) => {
-    const sendedMessages = await Message.findAll({
-        where: {
-            senderId: req.user.id,
-        },
-    });
-    const receivedMessages = await Message.findAll({
-        where: {
-            receiverId: req.user.id,
-        },
-    });
-    if (sendedMessages || receivedMessages) {
-        res.json({ sendedMessages, receivedMessages });
-    } else {
-        res.status(404).json("No message found");
+app.get(
+    "/messages/all",
+    passport.authenticate("jwt"),
+    checkIfSendedMessageExist,
+    checkIfReceivedMessageExist,
+    (req, res) => {
+        res.json(req.messages);
     }
-});
+);
 
-// **“/user/products/all”**
 // get all products de user
 
-app.get("/products/all", passport.authenticate("jwt"), async (req, res) => {
-    const products = await Product.findAll({
-        where: {
-            userId: req.user.id,
-        },
-    });
-    if (products) {
-        res.json(products);
-    } else {
-        res.status(404).json("no product found");
+app.get(
+    "/products/all",
+    passport.authenticate("jwt"),
+    checkIfProductExist,
+    (req, res) => {
+        res.json(req.products);
     }
-});
+);
 
 module.exports = app;
