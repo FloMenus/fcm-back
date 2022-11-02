@@ -3,11 +3,11 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT;
 const cors = require("cors");
-const productsRoutes= require("./routes/products");
-const messagesRoutes=require("./routes/messages");
-const usersRoutes=require("./routes/users");
-const userRoutes=require("./routes/user");
-const loginRoutes=require("./routes/login");
+const productsRoutes = require("./routes/products");
+const messagesRoutes = require("./routes/messages");
+const usersRoutes = require("./routes/users");
+const userRoutes = require("./routes/user");
+const loginRoutes = require("./routes/login");
 
 require("./models");
 

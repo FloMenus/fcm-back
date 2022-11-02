@@ -6,10 +6,6 @@ app.get('/me', passport.authenticate('jwt'), (req, res) => {
   res.json(req.user)
 })
 
-app.get('/secured', passport.authenticate('jwt'), (req, res) => {
-  res.json({
-    message: 'secured'
-  })
-})
+
 
 module.exports = app
