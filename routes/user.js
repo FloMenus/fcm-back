@@ -1,9 +1,10 @@
 const express = require("express");
 const app = express();
 
-const { User } = require("../models");
-const passport = require("../config/passport");
 const { body } = require("express-validator");
+const passport = require("../config/passport");
+const bcrypt = require("bcrypt");
+const { User } = require("../models");
 
 const {
     checkIfEmailAlreadyExist,
