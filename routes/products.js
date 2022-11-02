@@ -1,23 +1,21 @@
 const express = require("express");
 const app = express();
 const passport = require("../config/passport");
-const { Product } = require("../models/index");
-const { Message } = require("../models/message");
+
+const { Product, Message } = require("../models");
+
 const {
-    checkIfIdExist,
-    checkIfAlreadyExist,
+    checkIfProductExist,
+    checkIfProductAlreadyExist,
 } = require("../middlewares/product");
 
 // get all products
 app.get("/all", passport.authenticate("jwt"), async (req, res) => {
     const products = await Product.findAll();
     if (!products) {
-        return res.status(404).json({
-            ok: false,
-            message: "No products found",
-        });
+        res.status(404).json("No products found");
     } else {
-        return res.json(products);
+        res.json(products);
     }
 });
 
@@ -33,34 +31,16 @@ app.post(
         .isLength({ min: 8 })
         .withMessage("Description is required"),
     body("price").exists().isInt().withMessage("Price is required"),
+    checkIfProductAlreadyExist,
     async (req, res) => {
-        const product = await Product.create(req.body);
-        res.json(product);
+        res.json(req.product);
     }
 );
 
 // get 1 product by id
-app.get(
-    "/:id",
-    body("title")
-        .exists()
-        .isLength({ min: 3 })
-        .withMessage("Title is required"),
-    body("description")
-        .exists()
-        .isLength({ min: 8 })
-        .withMessage("Description is required"),
-    body("price").exists().isInt().withMessage("Price is required"),
-    async (req, res) => {
-        const { id } = req.params;
-        const product = await Product.findOne({
-            where: {
-                id,
-            },
-        });
-        res.json(product);
-    }
-);
+app.get("/:id", checkIfProductExist, async (req, res) => {
+    res.json(req.product);
+});
 
 // put 1 product by id
 app.put(
@@ -93,6 +73,7 @@ app.post(
         .exists()
         .isLength({ min: 8 })
         .withMessage("Content is required"),
+    checkIfProductExist,
     async (req, res) => {
         const { content } = req.body;
         const product = Product.findOne({

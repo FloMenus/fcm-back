@@ -1,11 +1,9 @@
-const express = require('express')
-const app = express()
-const passport = require('../config/passport')
+const express = require("express");
+const app = express();
+const { checkIfUserExist } = require("../middlewares/users");
 
-app.get('/me', passport.authenticate('jwt'), (req, res) => {
-  res.json(req.user)
-})
+app.get("/:id/profile", checkIfUserExist, async (req, res) => {
+    res.json(req.user);
+});
 
-
-
-module.exports = app
+module.exports = app;
