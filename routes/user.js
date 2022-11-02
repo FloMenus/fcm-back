@@ -1,20 +1,10 @@
-// **“/user”**
+const express = require("express");
+const app = express();
 
-// get 1 user
+const { User, Message, Product } = require("../models");
+const passport = require("../config/passport");
+const { body, validationResult } = require("express-validator");
 
-// put 1 user
-
-// **“/user/messages/all”**
-
-// get all messages (check id user connecté avec receiver\_id, sender\_id en db)
-
-// **“/user/products/all”**
-
-// get all products de user
-
-// **“/users/:id/profile” pas sécu**
-
-// get 1 user by id
 // const multer=require('multer');
 // const storageEngine= multer.diskStorage({
 //     destination:"./pictures",
@@ -23,26 +13,17 @@
 //     }
 // }).limits(2000000)
 // const upload=multer({dest:'../pictures'});
-const User = require("../middlewares/user");
-const express = require("express");
-const app = express();
-const User = require("../models");
-const passport = require("../config/passport");
-const { body, validationResult } = require("express-validator");
 
-app.get("/", passport.authenticate("jwt"), (req, res) => {
-    res.json(req.user);
-});
-
+// post 1 user sign up (créer un compte)
 app.post(
     "/",
     body("firstName")
         .exists()
-        .isLenght({ min: 2 })
+        .isLength({ min: 2 })
         .withMessage("First name is too short"),
     body("lastName")
         .exists()
-        .isLenght({ min: 2 })
+        .isLength({ min: 2 })
         .withMessage("Last name is too short"),
     body("email").exists().isEmail().withMessage(`Email isn't valid`),
     body("password")
@@ -51,7 +32,7 @@ app.post(
         .withMessage("Invalid password"),
     body("nickname")
         .exists()
-        .isLenght({ min: 5 })
+        .isLength({ min: 2 })
         .withMessage("Invalid nickname"),
     async (req, res) => {
         const { email, password, firstName, lastName, nickname } = req.body;
@@ -64,20 +45,21 @@ app.post(
             lastName,
             nickname,
         });
-
         res.json(user);
     }
 );
+
+// put 1 user
 app.put(
     "/",
     passport.authenticate("jwt"),
     body("firstName")
         .exists()
-        .isLenght({ min: 2 })
+        .isLength({ min: 2 })
         .withMessage("First name is too short"),
     body("lastName")
         .exists()
-        .isLenght({ min: 2 })
+        .isLength({ min: 2 })
         .withMessage("Last name is too short"),
     body("email").exists().isEmail().withMessage(`Email isn't valid`),
     body("password")
@@ -86,16 +68,17 @@ app.put(
         .withMessage("Invalid password"),
     body("nickname")
         .exists()
-        .isLenght({ min: 5 })
+        .isLength({ min: 5 })
         .withMessage("Invalid nickname"),
     async (req, res) => {
-        const { firstName, lastName, nickname, passport, email } = req.body;
+        const { firstName, lastName, nickname, password, email } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.update(
             {
                 firstName,
                 lastName,
                 nickname,
-                password,
+                password: hashedPassword,
                 email,
             },
             {
@@ -104,7 +87,59 @@ app.put(
                 },
             }
         );
+        res.json(user);
     }
 );
+
+// get 1 user
+app.get("/", passport.authenticate("jwt"), async (req, res) => {
+    const user = await User.findOne({
+        where: {
+            id: req.user.id,
+        },
+    });
+    const data = {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        nickname: user.nickname,
+    };
+    res.json(data);
+});
+
+// get all messages (check with receiverId, senderId)
+app.get("/messages/all", passport.authenticate("jwt"), async (req, res) => {
+    const sendedMessages = await Message.findAll({
+        where: {
+            senderId: req.user.id,
+        },
+    });
+    const receivedMessages = await Message.findAll({
+        where: {
+            receiverId: req.user.id,
+        },
+    });
+    if (sendedMessages || receivedMessages) {
+        res.json({ sendedMessages, receivedMessages });
+    } else {
+        res.status(404).json("No message found");
+    }
+});
+
+// **“/user/products/all”**
+// get all products de user
+
+app.get("/products/all", passport.authenticate("jwt"), async (req, res) => {
+    const products = await Product.findAll({
+        where: {
+            userId: req.user.id,
+        },
+    });
+    if (products) {
+        res.json(products);
+    } else {
+        res.status(404).json("no product found");
+    }
+});
 
 module.exports = app;

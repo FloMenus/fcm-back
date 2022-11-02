@@ -44,12 +44,12 @@ app.put("/:id", async (req, res) => {
 
 // post message on product by id
 app.post("/:id/message", passport.authenticate("jwt"), async (req, res) => {
-    const {content} = req.body;
-    const product=Product.findOne({
-        where:{
-            id:req.params.id,
-        }
-    })
+    const { content } = req.body;
+    const product = Product.findOne({
+        where: {
+            id: req.params.id,
+        },
+    });
     const message = await Message.create({
         content,
         senderId: req.user.id,
