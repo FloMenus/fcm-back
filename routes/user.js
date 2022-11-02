@@ -2,8 +2,6 @@
 
 // get 1 user
 
-// post 1 user sign up (créer un compte)
-
 // put 1 user
 
 // **“/user/messages/all”**
@@ -25,17 +23,19 @@
 //     }
 // }).limits(2000000)
 // const upload=multer({dest:'../pictures'});
-const user = require("../middlewares/user");
+const User = require("../middlewares/user");
 const express = require("express");
 const app = express();
+const User = require("../models");
 const passport = require("../config/passport");
 const { body, validationResult } = require("express-validator");
 
-app.get("/user", passport.authenticate("jwt"), (req, res) => {
+app.get("/", passport.authenticate("jwt"), (req, res) => {
     res.json(req.user);
 });
+
 app.post(
-    "/user",
+    "/",
     body("firstName")
         .exists()
         .isLenght({ min: 2 })
@@ -54,8 +54,56 @@ app.post(
         .isLenght({ min: 5 })
         .withMessage("Invalid nickname"),
     async (req, res) => {
-        req.json("coucou Arthur");
-        res.json("ca va arthur");
+        const { email, password, firstName, lastName, nickname } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await User.create({
+            email,
+            password: hashedPassword,
+            firstName,
+            lastName,
+            nickname,
+        });
+
+        res.json(user);
+    }
+);
+app.put(
+    "/",
+    passport.authenticate("jwt"),
+    body("firstName")
+        .exists()
+        .isLenght({ min: 2 })
+        .withMessage("First name is too short"),
+    body("lastName")
+        .exists()
+        .isLenght({ min: 2 })
+        .withMessage("Last name is too short"),
+    body("email").exists().isEmail().withMessage(`Email isn't valid`),
+    body("password")
+        .exists()
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/)
+        .withMessage("Invalid password"),
+    body("nickname")
+        .exists()
+        .isLenght({ min: 5 })
+        .withMessage("Invalid nickname"),
+    async (req, res) => {
+        const { firstName, lastName, nickname, passport, email } = req.body;
+        const user = await User.update(
+            {
+                firstName,
+                lastName,
+                nickname,
+                password,
+                email,
+            },
+            {
+                where: {
+                    id: req.user.id,
+                },
+            }
+        );
     }
 );
 

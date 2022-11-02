@@ -35,7 +35,6 @@ Product.belongsTo(User);
 Image.belongsTo(Product);
 Image.belongsTo(User);
 
-// User.hasMany(Message);
 User.hasMany(Product);
 User.hasOne(Image);
 Product.hasMany(Image);
