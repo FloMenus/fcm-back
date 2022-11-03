@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const passport = require("../config/passport");
 const { body } = require("express-validator");
+const { Op } = require("sequelize");
 
 const { Product, Message } = require("../models");
 
@@ -66,20 +67,24 @@ app.put(
     passport.authenticate("jwt"),
     async (req, res) => {
         const { id } = req.params;
-        const user = await Product.findOne({
+        const product = await Product.findOne({
             where: {
-                userId: req.user.id,
+                id,
             },
         });
-        if (user) {
+
+        if (product.userId === req.user.id) {
             const { title, description, price } = req.body;
             const newProductData = { title, description, price };
-            const product = await Product.update(newProductData, {
+            await Product.update(newProductData, {
                 where: {
                     id,
                 },
-                returning: true,
-                plain: true,
+            });
+            const product = await Product.findOne({
+                where: {
+                    id,
+                },
             });
             res.json(product);
         } else {
