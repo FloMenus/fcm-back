@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 
-const { body } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 const passport = require("../config/passport");
 const bcrypt = require("bcrypt");
@@ -12,31 +12,23 @@ const {
     checkIfNicknameAlreadyExist,
 } = require("../middlewares/user");
 
-const multer = require("multer");
-const storageEngine = multer
-    .diskStorage({
-        destination: "pictures",
-        filename: (req, file, cb) => {
-            cb(null, `${Date.now()}+"." + ${file.extension}`);
-        },
-    })
-    .limits(2000000);
-
 // post 1 user sign up (créer un compte)
 app.post(
     "/",
     body("firstName")
         .exists()
         .isLength({ min: 2 })
-        .withMessage("First name is too short"),
+        .withMessage("Invalid first name"),
     body("lastName")
         .exists()
         .isLength({ min: 2 })
-        .withMessage("Last name is too short"),
+        .withMessage("Invalid last name"),
     body("email").exists().isEmail().withMessage(`Email isn't valid`),
     body("password")
         .exists()
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/)
+        .matches(
+            /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/
+        )
         .withMessage("Invalid password"),
     body("nickname")
         .exists()
@@ -44,9 +36,9 @@ app.post(
         .withMessage("Invalid nickname"),
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
-    storageEngine,
+    // storageEngine,
     async (req, res) => {
-        const errorResult = validationResult(req);
+        const errorResult = validationResult(req).array();
 
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);
@@ -78,7 +70,7 @@ app.put(
         .withMessage("Last name is too short"),
     passport.authenticate("jwt"),
     async (req, res) => {
-        const errorResult = validationResult(req);
+        const errorResult = validationResult(req).array();
 
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);
@@ -140,10 +132,10 @@ app.get("/products/all", passport.authenticate("jwt"), async (req, res) => {
             userId: req.user.id,
         },
     });
-    if (products) {
+    if (products.length > 0) {
         res.json(products);
     } else {
-        res.status(404).json("no product found");
+        res.status(404).json("No product found");
     }
 });
 

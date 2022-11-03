@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const passport = require("../config/passport");
-const { body } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 
 const { Product, Message } = require("../models");
@@ -33,7 +33,7 @@ app.post(
     body("price").exists().isInt().withMessage("Price is required"),
     passport.authenticate("jwt"),
     async (req, res) => {
-        const errorResult = validationResult(req);
+        const errorResult = validationResult(req).array();
 
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);
@@ -69,7 +69,7 @@ app.put(
     body("price").exists().isInt().withMessage("Price is required"),
     passport.authenticate("jwt"),
     async (req, res) => {
-        const errorResult = validationResult(req);
+        const errorResult = validationResult(req).array();
 
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);
@@ -81,22 +81,28 @@ app.put(
                 },
             });
 
-            if (product.userId === req.user.id) {
-                const { title, description, price } = req.body;
-                const newProductData = { title, description, price };
-                await Product.update(newProductData, {
-                    where: {
-                        id,
-                    },
-                });
-                const product = await Product.findOne({
-                    where: {
-                        id,
-                    },
-                });
-                res.json(product);
+            if (product) {
+                if (product.userId === req.user.id) {
+                    const { title, description, price } = req.body;
+                    const newProductData = { title, description, price };
+                    await Product.update(newProductData, {
+                        where: {
+                            id,
+                        },
+                    });
+                    const product = await Product.findOne({
+                        where: {
+                            id,
+                        },
+                    });
+                    res.json(product);
+                } else {
+                    res.status(403).json(
+                        "You are not allowed to modify this product"
+                    );
+                }
             } else {
-                res.status(403).json("You are allowed to modify this product");
+                res.status(404).json("Product not found");
             }
         }
     }
@@ -112,7 +118,7 @@ app.post(
     passport.authenticate("jwt"),
     checkIfProductExist,
     async (req, res) => {
-        const errorResult = validationResult(req);
+        const errorResult = validationResult(req).array();
 
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);

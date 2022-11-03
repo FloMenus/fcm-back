@@ -11,7 +11,7 @@ app.post(
     body("email").exists().isEmail().withMessage(`Email isn't valid`),
     body("password").exists().withMessage("Password is required"),
     async (req, res) => {
-        const errorResult = validationResult(req);
+        const errorResult = validationResult(req).array();
 
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);
