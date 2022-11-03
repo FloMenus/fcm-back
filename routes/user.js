@@ -48,16 +48,22 @@ app.post(
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
     async (req, res) => {
-        const { firstName, lastName, email, nickname, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await User.create({
-            first_name: firstName,
-            last_name: lastName,
-            email,
-            nickname,
-            password: hashedPassword,
-        });
-        res.json(user);
+        const errorResult = validationResult(req);
+
+        if (errorResult.length > 0) {
+            res.status(400).json(errorResult);
+        } else {
+            const { firstName, lastName, email, nickname, password } = req.body;
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const user = await User.create({
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                nickname,
+                password: hashedPassword,
+            });
+            res.json(user);
+        }
     }
 );
 
@@ -78,26 +84,32 @@ app.put(
         .withMessage("Invalid password"),
     passport.authenticate("jwt"),
     async (req, res) => {
-        const { firstName, lastName, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await User.update(
-            {
-                first_name: firstName,
-                last_name: lastName,
-                password: hashedPassword,
-            },
-            {
+        const errorResult = validationResult(req);
+
+        if (errorResult.length > 0) {
+            res.status(400).json(errorResult);
+        } else {
+            const { firstName, lastName, password } = req.body;
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await User.update(
+                {
+                    first_name: firstName,
+                    last_name: lastName,
+                    password: hashedPassword,
+                },
+                {
+                    where: {
+                        id: req.user.id,
+                    },
+                }
+            );
+            const user = await User.findOne({
                 where: {
                     id: req.user.id,
                 },
-            }
-        );
-        const user = await User.findOne({
-            where: {
-                id: req.user.id,
-            },
-        });
-        res.json(user);
+            });
+            res.json(user);
+        }
     }
 );
 

@@ -36,14 +36,20 @@ app.post(
     body("price").exists().isInt().withMessage("Price is required"),
     passport.authenticate("jwt"),
     async (req, res) => {
-        const { title, description, price } = req.body;
-        const product = await Product.create({
-            title,
-            description,
-            price,
-            userId: req.user.id,
-        });
-        res.json(product);
+        const errorResult = validationResult(req);
+
+        if (errorResult.length > 0) {
+            res.status(400).json(errorResult);
+        } else {
+            const { title, description, price } = req.body;
+            const product = await Product.create({
+                title,
+                description,
+                price,
+                userId: req.user.id,
+            });
+            res.json(product);
+        }
     }
 );
 
@@ -66,29 +72,35 @@ app.put(
     body("price").exists().isInt().withMessage("Price is required"),
     passport.authenticate("jwt"),
     async (req, res) => {
-        const { id } = req.params;
-        const product = await Product.findOne({
-            where: {
-                id,
-            },
-        });
+        const errorResult = validationResult(req);
 
-        if (product.userId === req.user.id) {
-            const { title, description, price } = req.body;
-            const newProductData = { title, description, price };
-            await Product.update(newProductData, {
-                where: {
-                    id,
-                },
-            });
+        if (errorResult.length > 0) {
+            res.status(400).json(errorResult);
+        } else {
+            const { id } = req.params;
             const product = await Product.findOne({
                 where: {
                     id,
                 },
             });
-            res.json(product);
-        } else {
-            res.status(403).json("You are allowed to modify this product");
+
+            if (product.userId === req.user.id) {
+                const { title, description, price } = req.body;
+                const newProductData = { title, description, price };
+                await Product.update(newProductData, {
+                    where: {
+                        id,
+                    },
+                });
+                const product = await Product.findOne({
+                    where: {
+                        id,
+                    },
+                });
+                res.json(product);
+            } else {
+                res.status(403).json("You are allowed to modify this product");
+            }
         }
     }
 );
@@ -103,14 +115,20 @@ app.post(
     passport.authenticate("jwt"),
     checkIfProductExist,
     async (req, res) => {
-        const { content } = req.body;
-        const message = await Message.create({
-            content,
-            senderId: req.user.id,
-            receiverId: req.product.userId,
-            productId: +req.params.id,
-        });
-        res.json(message);
+        const errorResult = validationResult(req);
+
+        if (errorResult.length > 0) {
+            res.status(400).json(errorResult);
+        } else {
+            const { content } = req.body;
+            const message = await Message.create({
+                content,
+                senderId: req.user.id,
+                receiverId: req.product.userId,
+                productId: +req.params.id,
+            });
+            res.json(message);
+        }
     }
 );
 
