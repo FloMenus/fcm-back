@@ -64,7 +64,6 @@ app.post(
 // put 1 user
 app.put(
     "/",
-    passport.authenticate("jwt"),
     body("firstName")
         .exists()
         .isLength({ min: 2 })
@@ -73,22 +72,18 @@ app.put(
         .exists()
         .isLength({ min: 2 })
         .withMessage("Last name is too short"),
-    body("email").exists().isEmail().withMessage(`Email isn't valid`),
     body("password")
         .exists()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/)
         .withMessage("Invalid password"),
-    body("nickname")
-        .exists()
-        .isLength({ min: 5 })
-        .withMessage("Invalid nickname"),
-    checkIfEmailAlreadyExist,
-    checkIfNicknameAlreadyExist,
+    passport.authenticate("jwt"),
     async (req, res) => {
-        const hashedPassword = await bcrypt.hash(req.user.password, 10);
-        const user = await User.update(
+        const { firstName, lastName, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await User.update(
             {
-                ...req.user,
+                first_name: firstName,
+                last_name: lastName,
                 password: hashedPassword,
             },
             {
@@ -97,6 +92,11 @@ app.put(
                 },
             }
         );
+        const user = await User.findOne({
+            where: {
+                id: req.user.id,
+            },
+        });
         res.json(user);
     }
 );
@@ -119,8 +119,7 @@ app.get(
                     { receiverId: req.user.id },
                 ],
             },
-            group: "productId",
-            order: [["createdAt", "DESC"]],
+            order: [["productId", "ASC"]],
         });
         if (messages.length > 0) {
             res.json(messages);
