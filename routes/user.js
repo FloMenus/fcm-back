@@ -16,14 +16,15 @@ const {
     checkIfProductExist,
 } = require("../middlewares/user");
 
-// const multer=require('multer');
-// const storageEngine= multer.diskStorage({
-//     destination:"./pictures",
-//     filename:(req,file,cb)=>{
-//         cb(null,`${Date.now()}`)
-//     }
-// }).limits(2000000)
-// const upload=multer({dest:'../pictures'});
+const multer = require("multer");
+const storageEngine = multer
+    .diskStorage({
+        destination: "pictures",
+        filename: (req, file, cb) => {
+            cb(null, `${Date.now()}+"." + ${file.extension}`);
+        },
+    })
+    .limits(2000000);
 
 // post 1 user sign up (créer un compte)
 app.post(
@@ -47,6 +48,7 @@ app.post(
         .withMessage("Invalid nickname"),
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
+    storageEngine,
     async (req, res) => {
         const errorResult = validationResult(req);
 

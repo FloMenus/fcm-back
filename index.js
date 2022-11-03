@@ -13,6 +13,7 @@ require("./models");
 
 app.use(express.json());
 app.use(cors());
+app.use(express.static("public"));
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
