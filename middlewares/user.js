@@ -8,7 +8,6 @@ const checkIfEmailAlreadyExist = async (req, res, next) => {
         },
     });
     if (!requestedEmail) {
-        req.user = { email, password, firstName, lastName, nickname };
         next();
     } else {
         res.status(409).json("Email already exist");
@@ -18,7 +17,7 @@ const checkIfEmailAlreadyExist = async (req, res, next) => {
 const checkIfNicknameAlreadyExist = async (req, res, next) => {
     const requestedNickname = await User.findOne({
         where: {
-            nickname: req.user.nickname,
+            nickname: req.body.nickname,
         },
     });
     if (!requestedNickname) {

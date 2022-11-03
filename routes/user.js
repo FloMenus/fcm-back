@@ -10,7 +10,6 @@ const {
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
     checkIfUserExist,
-    checkIfUserExist,
     checkIfReceivedMessageExist,
     checkIfSendedMessageExist,
     checkIfProductExist,
@@ -48,10 +47,13 @@ app.post(
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
     async (req, res) => {
-        const hashedPassword = await bcrypt.hash(req.user.password, 10);
-
+        const { firstName, lastName, email, nickname, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
-            ...req.user,
+            first_name: firstName,
+            last_name: lastName,
+            email,
+            nickname,
             password: hashedPassword,
         });
         res.json(user);
@@ -99,16 +101,15 @@ app.put(
 );
 
 // get 1 user
-app.get("/", passport.authenticate("jwt"), checkIfUserExist, (req, res) => {
-    res.json(req.data);
+app.get("/", passport.authenticate("jwt"), (req, res) => {
+    res.json(req.user);
 });
 
 // get all messages (check with receiverId, senderId)
 app.get(
     "/messages/all",
     passport.authenticate("jwt"),
-    checkIfSendedMessageExist,
-    checkIfReceivedMessageExist,
+
     (req, res) => {
         res.json(req.messages);
     }

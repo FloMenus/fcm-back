@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const passport = require("../config/passport");
+const { body } = require("express-validator");
 
 const { Product, Message } = require("../models");
 
@@ -8,6 +9,7 @@ const {
     checkIfProductExist,
     checkIfProductAlreadyExist,
 } = require("../middlewares/product");
+const user = require("../models/user");
 
 // get all products
 app.get("/all", passport.authenticate("jwt"), async (req, res) => {
@@ -21,7 +23,7 @@ app.get("/all", passport.authenticate("jwt"), async (req, res) => {
 
 // post 1 product
 app.post(
-    "/all",
+    "/",
     body("title")
         .exists()
         .isLength({ min: 3 })
@@ -31,9 +33,16 @@ app.post(
         .isLength({ min: 8 })
         .withMessage("Description is required"),
     body("price").exists().isInt().withMessage("Price is required"),
-    checkIfProductAlreadyExist,
+    passport.authenticate("jwt"),
     async (req, res) => {
-        res.json(req.product);
+        const { title, description, price } = req.body;
+        const product = await Product.create({
+            title,
+            description,
+            price,
+            userId: req.user.id,
+        });
+        res.json(product);
     }
 );
 
