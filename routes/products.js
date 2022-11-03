@@ -96,24 +96,19 @@ app.put(
 // post message on product by id
 app.post(
     "/:id/message",
-    passport.authenticate("jwt"),
     body("content")
         .exists()
         .isLength({ min: 8 })
         .withMessage("Content is required"),
+    passport.authenticate("jwt"),
     checkIfProductExist,
     async (req, res) => {
         const { content } = req.body;
-        const product = Product.findOne({
-            where: {
-                id: req.params.id,
-            },
-        });
         const message = await Message.create({
             content,
             senderId: req.user.id,
-            receiverId: product.userId,
-            productId: req.params.id,
+            receiverId: req.product.userId,
+            productId: +req.params.id,
         });
         res.json(message);
     }
