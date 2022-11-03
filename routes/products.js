@@ -12,7 +12,7 @@ const {
 const user = require("../models/user");
 
 // get all products
-app.get("/all", passport.authenticate("jwt"), async (req, res) => {
+app.get("/all", async (req, res) => {
     const products = await Product.findAll();
     if (!products) {
         res.status(404).json("No products found");
@@ -63,14 +63,28 @@ app.put(
         .isLength({ min: 8 })
         .withMessage("Description is required"),
     body("price").exists().isInt().withMessage("Price is required"),
+    passport.authenticate("jwt"),
     async (req, res) => {
         const { id } = req.params;
-        const product = await Product.update(req.body, {
+        const user = await Product.findOne({
             where: {
-                id,
+                userId: req.user.id,
             },
         });
-        res.json(product);
+        if (user) {
+            const { title, description, price } = req.body;
+            const newProductData = { title, description, price };
+            const product = await Product.update(newProductData, {
+                where: {
+                    id,
+                },
+                returning: true,
+                plain: true,
+            });
+            res.json(product);
+        } else {
+            res.status(403).json("You are allowed to modify this product");
+        }
     }
 );
 

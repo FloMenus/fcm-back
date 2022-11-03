@@ -2,9 +2,10 @@ const express = require("express");
 const app = express();
 
 const { body } = require("express-validator");
+const { Op } = require("sequelize");
 const passport = require("../config/passport");
 const bcrypt = require("bcrypt");
-const { User } = require("../models");
+const { User, Message, Product } = require("../models");
 
 const {
     checkIfEmailAlreadyExist,
@@ -110,8 +111,22 @@ app.get(
     "/messages/all",
     passport.authenticate("jwt"),
 
-    (req, res) => {
-        res.json(req.messages);
+    async (req, res) => {
+        const messages = await Message.findAll({
+            where: {
+                [Op.or]: [
+                    { senderId: req.user.id },
+                    { receiverId: req.user.id },
+                ],
+            },
+            group: "productId",
+            order: [["createdAt", "DESC"]],
+        });
+        if (messages.length > 0) {
+            res.json(messages);
+        } else {
+            res.status(404).json("No message found");
+        }
     }
 );
 
@@ -121,8 +136,17 @@ app.get(
     "/products/all",
     passport.authenticate("jwt"),
     checkIfProductExist,
-    (req, res) => {
-        res.json(req.products);
+    async (req, res) => {
+        const products = await Product.findAll({
+            where: {
+                userId: req.user.id,
+            },
+        });
+        if (products) {
+            res.json(products);
+        } else {
+            res.status(404).json("no product found");
+        }
     }
 );
 

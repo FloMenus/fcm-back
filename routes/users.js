@@ -3,7 +3,7 @@ const app = express();
 const { checkIfUserExist } = require("../middlewares/users");
 
 app.get("/:id/profile", checkIfUserExist, async (req, res) => {
-    res.json(req.user);
+    res.json(req.profile);
 });
 
 module.exports = app;
