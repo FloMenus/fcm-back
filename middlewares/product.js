@@ -16,20 +16,4 @@ const checkIfProductExist = async (req, res, next) => {
     }
 };
 
-// check if product already exist
-const checkIfProductAlreadyExist = async (req, res, next) => {
-    const { id } = req.params;
-    const product = await Product.findOne({
-        where: {
-            id,
-        },
-    });
-    if (product) {
-        res.status(409).json("Product already exist");
-    } else {
-        req.product = product;
-        next();
-    }
-};
-
-module.exports = { checkIfProductExist, checkIfProductAlreadyExist };
+module.exports = { checkIfProductExist };

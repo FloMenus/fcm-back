@@ -6,10 +6,7 @@ const { Op } = require("sequelize");
 
 const { Product, Message } = require("../models");
 
-const {
-    checkIfProductExist,
-    checkIfProductAlreadyExist,
-} = require("../middlewares/product");
+const { checkIfProductExist } = require("../middlewares/product");
 const user = require("../models/user");
 
 // get all products

@@ -10,10 +10,6 @@ const { User, Message, Product } = require("../models");
 const {
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
-    checkIfUserExist,
-    checkIfReceivedMessageExist,
-    checkIfSendedMessageExist,
-    checkIfProductExist,
 } = require("../middlewares/user");
 
 const multer = require("multer");
@@ -80,10 +76,6 @@ app.put(
         .exists()
         .isLength({ min: 2 })
         .withMessage("Last name is too short"),
-    body("password")
-        .exists()
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/)
-        .withMessage("Invalid password"),
     passport.authenticate("jwt"),
     async (req, res) => {
         const errorResult = validationResult(req);
@@ -91,13 +83,11 @@ app.put(
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);
         } else {
-            const { firstName, lastName, password } = req.body;
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const { firstName, lastName } = req.body;
             await User.update(
                 {
                     first_name: firstName,
                     last_name: lastName,
-                    password: hashedPassword,
                 },
                 {
                     where: {
@@ -144,23 +134,17 @@ app.get(
 );
 
 // get all products de user
-
-app.get(
-    "/products/all",
-    passport.authenticate("jwt"),
-    checkIfProductExist,
-    async (req, res) => {
-        const products = await Product.findAll({
-            where: {
-                userId: req.user.id,
-            },
-        });
-        if (products) {
-            res.json(products);
-        } else {
-            res.status(404).json("no product found");
-        }
+app.get("/products/all", passport.authenticate("jwt"), async (req, res) => {
+    const products = await Product.findAll({
+        where: {
+            userId: req.user.id,
+        },
+    });
+    if (products) {
+        res.json(products);
+    } else {
+        res.status(404).json("no product found");
     }
-);
+});
 
 module.exports = app;
