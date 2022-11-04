@@ -55,17 +55,16 @@ app.post(
     passport.authenticate("jwt"),
     multer.array("images", 5),
     async (req, res) => {
-        const errorResult = multer.MulterError;
-        if (errorResult) {
-            res.status(400).json("Upload failed");
-        } else {
-            console.log(req.file);
-            const image = await Image.create({
-                productId: req.headers.productId,
-                image_url: `${process.env.BACKEND_SERVER}/${req.file.filename}`,
+        const images = req.files;
+        const promises = images.map(async (image) => {
+            const currentUpload = await Image.create({
+                productId: req.params.id,
+                image_url: `${process.env.BACKEND_SERVER}/${image.filename}`,
             });
-            res.json(image);
-        }
+            return currentUpload;
+        });
+        const result = await Promise.all(promises);
+        res.json(result);
     }
 );
 

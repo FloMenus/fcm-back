@@ -59,17 +59,12 @@ app.post(
     }
 );
 
-app.post("/upload", multer.single("image"), async (req, res) => {
-    console.log(req.uploadError);
-    if (req.uploadError) {
-        res.status(400).json("Upload failed");
-    } else {
-        const image = await Image.create({
-            userId: req.headers.userId,
-            image_url: `${process.env.BACKEND_SERVER}/${req.file.filename}`,
-        });
-        res.json(image);
-    }
+app.post("/:id/upload", multer.single("image"), async (req, res) => {
+    const image = await Image.create({
+        userId: req.params.id,
+        image_url: `${process.env.BACKEND_SERVER}/${req.file.filename}`,
+    });
+    res.json(image);
 });
 
 // put 1 user
