@@ -1,6 +1,7 @@
 const { User, Product } = require("../models");
 
 const checkIfEmailAlreadyExist = async (req, res, next) => {
+    console.log(req.fields);
     const { email } = req.body;
     const requestedEmail = await User.findOne({
         where: {

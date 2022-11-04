@@ -2,9 +2,9 @@ const express = require("express");
 const app = express();
 const passport = require("../config/passport");
 const { body, validationResult } = require("express-validator");
-const { Op } = require("sequelize");
+const multer = require("../middlewares/multer-config");
 
-const { Product, Message } = require("../models");
+const { Product, Message, Image } = require("../models");
 
 const { checkIfProductExist } = require("../middlewares/product");
 const user = require("../models/user");
@@ -46,6 +46,25 @@ app.post(
                 userId: req.user.id,
             });
             res.json(product);
+        }
+    }
+);
+
+app.post(
+    "/:id/upload",
+    passport.authenticate("jwt"),
+    multer.array("images", 5),
+    async (req, res) => {
+        const errorResult = multer.MulterError;
+        if (errorResult) {
+            res.status(400).json("Upload failed");
+        } else {
+            console.log(req.file);
+            const image = await Image.create({
+                productId: req.headers.productId,
+                image_url: `${process.env.BACKEND_SERVER}/${req.file.filename}`,
+            });
+            res.json(image);
         }
     }
 );

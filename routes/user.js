@@ -1,16 +1,18 @@
 const express = require("express");
 const app = express();
 
+require("dotenv").config();
 const { body, validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 const passport = require("../config/passport");
 const bcrypt = require("bcrypt");
-const { User, Message, Product } = require("../models");
+const { User, Message, Product, Image } = require("../models");
 
 const {
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
 } = require("../middlewares/user");
+const multer = require("../middlewares/multer-config");
 
 // post 1 user sign up (créer un compte)
 app.post(
@@ -36,13 +38,13 @@ app.post(
         .withMessage("Invalid nickname"),
     checkIfEmailAlreadyExist,
     checkIfNicknameAlreadyExist,
-    // storageEngine,
     async (req, res) => {
         const errorResult = validationResult(req).array();
 
         if (errorResult.length > 0) {
             res.status(400).json(errorResult);
         } else {
+            console.log(req.body);
             const { firstName, lastName, email, nickname, password } = req.body;
             const hashedPassword = await bcrypt.hash(password, 10);
             const user = await User.create({
@@ -56,6 +58,19 @@ app.post(
         }
     }
 );
+
+app.post("/upload", multer.single("image"), async (req, res) => {
+    console.log(req.uploadError);
+    if (req.uploadError) {
+        res.status(400).json("Upload failed");
+    } else {
+        const image = await Image.create({
+            userId: req.headers.userId,
+            image_url: `${process.env.BACKEND_SERVER}/${req.file.filename}`,
+        });
+        res.json(image);
+    }
+});
 
 // put 1 user
 app.put(
