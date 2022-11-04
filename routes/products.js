@@ -11,7 +11,9 @@ const user = require("../models/user");
 
 // get all products
 app.get("/all", async (req, res) => {
-    const products = await Product.findAll();
+    const products = await Product.findAll({
+        order: [["updatedAt", "DESC"]],
+    });
     if (!products) {
         res.status(404).json("No products found");
     } else {
